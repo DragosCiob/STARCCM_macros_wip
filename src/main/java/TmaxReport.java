@@ -18,30 +18,46 @@ public class TmaxReport extends StarMacro {
 
      private static Simulation sim;
 
+
     public void execute()  {
 
         sim = getActiveSimulation();
 
+        Collection<GeometryPart> selectedParts = (Collection<GeometryPart>) getSelectedObjects(sim, "Select Parts", FilterModel.AllGeometryPartsFilterModel, ModelDescriptor.SelectionType.Multiple);
+
         setFoldersGroup();
 
-        generateReports();
+        generateReports(selectedParts);
+
+        Collection<Report> selectedReports = sim.getReportManager().getObjects().stream().filter(report -> report.getPresentationName().contains("EMAG")).collect(Collectors.toList());
 
         setVolumeMeshRepresentation();
 
-        generateMonitors();
+        generateMonitors(selectedReports);
+
+        Collection<Monitor> selectedMonitors = sim.getMonitorManager().getObjects().stream().filter(monitor -> monitor.getPresentationName().contains("EMAG")).collect(Collectors.toList());
+        sim.println(selectedMonitors.size());
+
+
+        createMonitorPlot(selectedMonitors);
+
+
+    }
+    //the following method will generate the monitor plot
+    private static void createMonitorPlot(Collection<Monitor> selectedMonitors) {
+
+        sim.getPlotManager().createAndSelectMonitorPlot(selectedMonitors, "EMAG_T_max");
 
 
     }
 
 
     //the following method will generate reports based on the collection of parts chose by user
-    private static void generateReports() {
-
-        Collection<GeometryPart> selectParts = new ArrayList<>();
-        selectParts =(Collection<GeometryPart>) getSelectedObjects(sim, "Select Parts", FilterModel.AllGeometryPartsFilterModel, ModelDescriptor.SelectionType.Multiple);
+    private static void generateReports(Collection<GeometryPart> selectedParts) {
 
 
-        for (GeometryPart part : selectParts) {
+
+        for (GeometryPart part : selectedParts) {
 
             MaxReport maxReportGenerate =
                     sim.getReportManager().createReport(MaxReport.class);
@@ -63,10 +79,9 @@ public class TmaxReport extends StarMacro {
             }
 
 
-
         }
 
-        sim.println(selectParts.size());
+        sim.println(selectedParts.size());
     }
 
     //JFrame for user interaction
@@ -123,16 +138,14 @@ public class TmaxReport extends StarMacro {
     }
 
     //the following method will generate monitors according to user selection made for reports
-    private static void generateMonitors() {
-
-        Collection<Report> selectReports = new ArrayList<>();
-
-        selectReports =  sim.getReportManager().getObjects().stream().filter(report -> report.getPresentationName().contains("EMAG")).collect(Collectors.toList());
-
-        sim.println(selectReports.size());
+    private static void generateMonitors( Collection<Report> selectedReports) {
 
 
-        for ( Report report : selectReports) {
+
+        sim.println(selectedReports.size());
+
+
+        for ( Report report : selectedReports) {
 
             if(report.getPresentationName().contains("EMAG")){
 
@@ -144,7 +157,6 @@ public class TmaxReport extends StarMacro {
 
 
                       ((ClientServerObjectGroup) sim.getMonitorManager().getGroupsManager().getObject("EMAG")).getGroupsManager().groupObjects("EMAG", new NeoObjectVector(new Object[] {monitor}), true);
-
 
                 }
 
